@@ -4,6 +4,17 @@
 -- Habilitar extensão UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+CREATE TABLE tracks (
+  slug TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  description TEXT,
+  icon TEXT NOT NULL DEFAULT '∫',
+  color TEXT NOT NULL DEFAULT 'from-blue-500 to-indigo-600',
+  order_index INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Tabela pública de profiles (extensão do Supabase Auth users)
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -23,7 +34,7 @@ CREATE TABLE topics (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title TEXT NOT NULL,
   description TEXT,
-  track TEXT NOT NULL CHECK (track IN ('calculo1','calculo2','calculo3','calculovetorial')),
+  track TEXT NOT NULL REFERENCES tracks(slug) ON UPDATE CASCADE,
   order_index INT NOT NULL,
   resources JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()

@@ -14,7 +14,7 @@ import type { Topic } from '@/lib/types'
 import { toast } from 'sonner'
 import { Save, Eye, Edit3 } from 'lucide-react'
 
-export function NewLessonForm() {
+export function NewLessonForm({ editId }: { editId?: string }) {
   const { supabase } = useUser()
   const router = useRouter()
   const [topics, setTopics] = useState<Topic[]>([])
@@ -30,27 +30,37 @@ export function NewLessonForm() {
     if (!supabase) return
     supabase.from('topics').select('*').order('track').order('order_index').then(({ data }) => {
       setTopics((data ?? []) as Topic[])
-      if ((data ?? []).length > 0) setTopicId(data![0].id)
+      if ((data ?? []).length > 0 && !editId) setTopicId(data![0].id)
     })
-  }, [supabase])
+    if (editId) {
+      supabase.from('lessons').select('*').eq('id', editId).single().then(({ data }) => {
+        if (!data) return
+        setTopicId(data.topic_id); setTitle(data.title); setContent(data.content_md ?? '')
+        setOrderIndex(String(data.order_index)); setXpReward(String(data.xp_reward)); setResources(data.resources ?? [])
+      })
+    }
+  }, [supabase, editId])
 
   const handleSubmit = async () => {
     if (!supabase || !topicId || !title.trim()) { toast.error('Preencha os campos obrigatórios.'); return }
     setSaving(true)
-    const { error } = await supabase.from('lessons').insert({
+    const payload = {
       topic_id: topicId, title: title.trim(), content_md: normalizeMarkdown(content) || null,
       order_index: parseInt(orderIndex) || 0, xp_reward: parseInt(xpReward) || 10,
       resources,
-    })
+    }
+    const { error } = editId
+      ? await supabase.from('lessons').update(payload).eq('id', editId)
+      : await supabase.from('lessons').insert(payload)
     setSaving(false)
     if (error) { toast.error('Erro ao criar aula.'); return }
-    toast.success('Aula criada!')
+    toast.success(editId ? 'Aula atualizada!' : 'Aula criada!')
     router.push('/admin/conteudo')
   }
 
   return (
     <Card className="max-w-3xl">
-      <CardHeader><CardTitle>Nova Aula</CardTitle></CardHeader>
+      <CardHeader><CardTitle>{editId ? 'Editar Aula' : 'Nova Aula'}</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label>Tópico</Label>
@@ -66,7 +76,7 @@ export function NewLessonForm() {
         </div>
         <MarkdownEditor label="Conteúdo da aula (Markdown + KaTeX)" value={content} onChange={setContent} placeholder="Digite a aula e use a barra de formatação..." />
         {supabase && <ResourceManager supabase={supabase} resources={resources} onChange={setResources} />}
-        <Button onClick={handleSubmit} loading={saving}><Save className="h-4 w-4 mr-1" /> Criar Aula</Button>
+        <Button onClick={handleSubmit} loading={saving}><Save className="h-4 w-4 mr-1" /> {editId ? 'Salvar Alterações' : 'Criar Aula'}</Button>
       </CardContent>
     </Card>
   )

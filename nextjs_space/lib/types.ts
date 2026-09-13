@@ -11,11 +11,22 @@ export interface Profile {
   updated_at: string
 }
 
+export interface Track {
+  slug: string
+  label: string
+  description: string | null
+  icon: string
+  color: string
+  order_index: number
+  created_at: string
+  updated_at: string
+}
+
 export interface Topic {
   id: string
   title: string
   description: string | null
-  track: 'calculo1' | 'calculo2' | 'calculo3' | 'calculovetorial'
+  track: string
   order_index: number
   resources: ContentResource[]
   created_at: string
