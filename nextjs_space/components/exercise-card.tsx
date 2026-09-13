@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
+import { ResourceList } from '@/components/content-editor'
 import { CheckCircle, XCircle, HelpCircle } from 'lucide-react'
 import type { Exercise } from '@/lib/types'
 
@@ -55,6 +56,7 @@ export function ExerciseCard({ exercise, onAnswer }: ExerciseCardProps) {
         </div>
         <CardTitle className="text-base font-medium">
           <MarkdownRenderer content={exercise?.question ?? ''} />
+          <ResourceList resources={exercise?.resources} />
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">

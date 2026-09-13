@@ -5,19 +5,20 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useUser } from '@/lib/supabase/hooks'
 import { TRACKS, type TrackKey } from '@/lib/types'
 import { toast } from 'sonner'
 import { Save } from 'lucide-react'
+import { MarkdownEditor, ResourceManager, normalizeMarkdown, type ContentResource } from '@/components/content-editor'
 
 export function NewTopicForm() {
   const { supabase } = useUser()
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [resources, setResources] = useState<ContentResource[]>([])
   const [track, setTrack] = useState<string>('calculo1')
   const [orderIndex, setOrderIndex] = useState('0')
   const [saving, setSaving] = useState(false)
@@ -27,7 +28,7 @@ export function NewTopicForm() {
     if (!title.trim()) { toast.error('Título obrigatório.'); return }
     setSaving(true)
     const { error } = await supabase.from('topics').insert({
-      title: title.trim(), description: description.trim() || null, track, order_index: parseInt(orderIndex) || 0,
+      title: title.trim(), description: normalizeMarkdown(description) || null, track, order_index: parseInt(orderIndex) || 0, resources,
     })
     setSaving(false)
     if (error) { toast.error('Erro ao criar tópico.'); return }
@@ -40,7 +41,7 @@ export function NewTopicForm() {
       <CardHeader><CardTitle>Novo Tópico</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2"><Label>Título</Label><Input value={title} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)} /></div>
-        <div className="space-y-2"><Label>Descrição</Label><Textarea value={description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)} /></div>
+        <MarkdownEditor label="Descrição do tópico" value={description} onChange={setDescription} placeholder="Descreva o que o estudante aprenderá neste tópico..." minHeight="min-h-[180px]" />
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Trilha</Label>
@@ -55,6 +56,7 @@ export function NewTopicForm() {
           </div>
           <div className="space-y-2"><Label>Índice de Ordem</Label><Input type="number" value={orderIndex} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderIndex(e.target.value)} /></div>
         </div>
+        {supabase && <ResourceManager supabase={supabase} resources={resources} onChange={setResources} />}
         <Button onClick={handleSubmit} loading={saving}><Save className="h-4 w-4 mr-1" /> Criar Tópico</Button>
       </CardContent>
     </Card>
