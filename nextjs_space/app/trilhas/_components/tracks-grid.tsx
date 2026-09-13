@@ -6,23 +6,28 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Stagger, StaggerItem } from '@/components/ui/animate'
-import { TRACKS, type Track, type TrackKey } from '@/lib/types'
+import type { Track } from '@/lib/types'
 import { useSupabase } from '@/lib/supabase/hooks'
 import { ArrowRight } from 'lucide-react'
 
-export function TracksGrid() {
+function trackGradient(color: string) {
+  const gradients: Record<string, string> = {
+    'from-blue-500 to-indigo-600': 'linear-gradient(90deg, #3b82f6, #4f46e5)',
+    'from-purple-500 to-pink-600': 'linear-gradient(90deg, #a855f7, #db2777)',
+    'from-emerald-500 to-teal-600': 'linear-gradient(90deg, #10b981, #0d9488)',
+    'from-amber-500 to-orange-600': 'linear-gradient(90deg, #f59e0b, #ea580c)',
+  }
+  return gradients[color] ?? gradients['from-blue-500 to-indigo-600']
+}
+
+export function TracksGrid({ tracks }: { tracks: Track[] }) {
   const supabase = useSupabase()
   const [topicCounts, setTopicCounts] = useState<Record<string, number>>({})
-  const [tracks, setTracks] = useState<Track[]>([])
 
   useEffect(() => {
     if (!supabase) return
     const fetch = async () => {
-      const [{ data: trackData }, { data }] = await Promise.all([
-        supabase.from('tracks').select('*').order('order_index'),
-        supabase.from('topics').select('track'),
-      ])
-      setTracks((trackData ?? []) as Track[])
+      const { data } = await supabase.from('topics').select('track')
       const counts: Record<string, number> = {}
       ;(data ?? []).forEach((t: any) => { counts[t?.track] = (counts[t?.track] ?? 0) + 1 })
       setTopicCounts(counts)
@@ -32,10 +37,10 @@ export function TracksGrid() {
 
   return (
     <Stagger className="grid sm:grid-cols-2 gap-6">
-      {(tracks.length > 0 ? tracks : (Object.entries(TRACKS) as [TrackKey, typeof TRACKS[TrackKey]][]).map(([slug, item]) => ({ slug, label: item.label, description: item.description, icon: item.icon, color: item.color, order_index: 0 } as Track))).map((track) => (
+      {tracks.map((track) => (
         <StaggerItem key={track.slug}>
           <Card variant="interactive" className="overflow-hidden h-full">
-            <div className={`h-2 bg-gradient-to-r ${track.color}`} />
+            <div className="h-2" style={{ backgroundImage: trackGradient(track.color) }} />
             <CardContent className="pt-6">
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-4xl">{track.icon}</span>

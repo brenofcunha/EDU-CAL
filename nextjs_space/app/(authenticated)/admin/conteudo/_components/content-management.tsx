@@ -61,6 +61,23 @@ export function ContentManagement() {
     fetchAll()
   }
 
+  const deleteTrack = async (track: Track) => {
+    if (!supabase) return
+    const topicCount = topics.filter((topic) => topic.track === track.slug).length
+    const warning = topicCount > 0
+      ? `Excluir a trilha "${track.label}" também excluirá ${topicCount} tópico(s), aulas e exercícios vinculados. Continuar?`
+      : `Excluir a trilha "${track.label}"?`
+    if (!confirm(warning)) return
+
+    const { error } = await supabase.from('tracks').delete().eq('slug', track.slug)
+    if (error) {
+      toast.error(`Erro ao excluir trilha: ${error.message}`)
+      return
+    }
+    toast.success('Trilha excluída.')
+    fetchAll()
+  }
+
   if (loading) return <div className="h-64 bg-muted animate-pulse rounded-lg" />
 
   return (
@@ -79,7 +96,7 @@ export function ContentManagement() {
           <div className="flex justify-end mb-4"><Button asChild><Link href="/admin/conteudo/trilhas/nova"><Plus className="h-4 w-4 mr-1" /> Nova Trilha</Link></Button></div>
           {tracks.length === 0 ? <EmptyState icon={Inbox} title="Nenhuma trilha" description="Execute a migração do Supabase para criar as trilhas iniciais." /> : (
             <Card><CardContent className="pt-6 overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Identificador</TableHead><TableHead>Ordem</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader><TableBody>
-              {tracks.map((track) => <TableRow key={track.slug}><TableCell className="font-medium">{track.icon} {track.label}</TableCell><TableCell>{track.slug}</TableCell><TableCell>{track.order_index}</TableCell><TableCell><Button variant="ghost" size="icon-sm" onClick={() => toast.info('A edição de trilhas será liberada no próximo passo.')}><Pencil className="h-4 w-4" /></Button></TableCell></TableRow>)}
+              {tracks.map((track) => <TableRow key={track.slug}><TableCell className="font-medium">{track.icon} {track.label}</TableCell><TableCell>{track.slug}</TableCell><TableCell>{track.order_index}</TableCell><TableCell><Button variant="ghost" size="icon-sm" title="Excluir trilha" onClick={() => deleteTrack(track)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell></TableRow>)}
             </TableBody></Table></CardContent></Card>
           )}
         </TabsContent>
