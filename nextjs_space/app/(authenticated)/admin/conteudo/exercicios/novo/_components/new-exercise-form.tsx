@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 import { Save, Plus, X } from 'lucide-react'
 import { MarkdownEditor, ResourceManager, normalizeMarkdown, type ContentResource } from '@/components/content-editor'
 
-export function NewExerciseForm() {
+export function NewExerciseForm({ editId }: { editId?: string }) {
   const { supabase } = useUser()
   const router = useRouter()
   const [topics, setTopics] = useState<Topic[]>([])
@@ -32,9 +32,17 @@ export function NewExerciseForm() {
     if (!supabase) return
     supabase.from('topics').select('*').order('track').order('order_index').then(({ data }) => {
       setTopics((data ?? []) as Topic[])
-      if ((data ?? []).length > 0) setTopicId(data![0].id)
+      if ((data ?? []).length > 0 && !editId) setTopicId(data![0].id)
     })
-  }, [supabase])
+    if (editId) {
+      supabase.from('exercises').select('*').eq('id', editId).single().then(({ data }) => {
+        if (!data) return
+        setTopicId(data.topic_id); setQuestion(data.question); setType(data.type); setOptions(data.options ?? ['', '', '', ''])
+        setCorrectAnswer(data.correct_answer); setExplanation(data.explanation ?? ''); setDifficulty(data.difficulty)
+        setXpReward(String(data.xp_reward)); setResources(data.resources ?? [])
+      })
+    }
+  }, [supabase, editId])
 
   const handleSubmit = async () => {
     if (!supabase || !topicId || !question.trim() || !correctAnswer.trim()) {
@@ -48,16 +56,18 @@ export function NewExerciseForm() {
       resources,
     }
     if (type === 'mc') payload.options = options.filter((o) => o.trim())
-    const { error } = await supabase.from('exercises').insert(payload)
+    const { error } = editId
+      ? await supabase.from('exercises').update(payload).eq('id', editId)
+      : await supabase.from('exercises').insert(payload)
     setSaving(false)
     if (error) { toast.error('Erro ao criar exercício.'); return }
-    toast.success('Exercício criado!')
+    toast.success(editId ? 'Exercício atualizado!' : 'Exercício criado!')
     router.push('/admin/conteudo')
   }
 
   return (
     <Card className="max-w-2xl">
-      <CardHeader><CardTitle>Novo Exercício</CardTitle></CardHeader>
+      <CardHeader><CardTitle>{editId ? 'Editar Exercício' : 'Novo Exercício'}</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label>Tópico</Label>
@@ -112,7 +122,7 @@ export function NewExerciseForm() {
         <MarkdownEditor label="Explicação (opcional)" value={explanation} onChange={setExplanation} placeholder="Explique a resposta para o estudante..." minHeight="min-h-[160px]" />
         {supabase && <ResourceManager supabase={supabase} resources={resources} onChange={setResources} />}
         <div className="space-y-2"><Label>XP de Recompensa</Label><Input type="number" value={xpReward} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setXpReward(e.target.value)} className="w-32" /></div>
-        <Button onClick={handleSubmit} loading={saving}><Save className="h-4 w-4 mr-1" /> Criar Exercício</Button>
+        <Button onClick={handleSubmit} loading={saving}><Save className="h-4 w-4 mr-1" /> {editId ? 'Salvar Alterações' : 'Criar Exercício'}</Button>
       </CardContent>
     </Card>
   )

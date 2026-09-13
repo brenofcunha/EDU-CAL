@@ -11,24 +11,27 @@ import { PageHeader } from '@/components/layouts/page-header'
 import { EmptyState } from '@/components/empty-state'
 import { useUser } from '@/lib/supabase/hooks'
 import { TRACKS } from '@/lib/types'
-import type { Topic, Lesson, Exercise } from '@/lib/types'
+import type { Topic, Lesson, Exercise, Track } from '@/lib/types'
 import { toast } from 'sonner'
-import { Plus, BookOpen, FileText, Target, Trash2, Inbox } from 'lucide-react'
+import { Plus, BookOpen, FileText, Target, Trash2, Inbox, Pencil } from 'lucide-react'
 
 export function ContentManagement() {
   const { supabase } = useUser()
   const [topics, setTopics] = useState<Topic[]>([])
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [exercises, setExercises] = useState<Exercise[]>([])
+  const [tracks, setTracks] = useState<Track[]>([])
   const [loading, setLoading] = useState(true)
 
   const fetchAll = async () => {
     if (!supabase) { setLoading(false); return }
-    const [t, l, e] = await Promise.all([
+    const [tr, t, l, e] = await Promise.all([
+      supabase.from('tracks').select('*').order('order_index'),
       supabase.from('topics').select('*').order('track').order('order_index'),
       supabase.from('lessons').select('*').order('order_index'),
       supabase.from('exercises').select('*').order('created_at', { ascending: false }),
     ])
+    setTracks((tr.data ?? []) as Track[])
     setTopics((t.data ?? []) as Topic[])
     setLessons((l.data ?? []) as Lesson[])
     setExercises((e.data ?? []) as Exercise[])
@@ -62,14 +65,24 @@ export function ContentManagement() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Gerenciar Conteúdo" description="Tópicos, aulas e exercícios." />
+      <PageHeader title="Gerenciar Conteúdo" description="Trilhas, tópicos, aulas e exercícios." />
 
       <Tabs defaultValue="topics">
         <TabsList>
+          <TabsTrigger value="tracks"><BookOpen className="h-4 w-4 mr-1" /> Trilhas ({tracks.length})</TabsTrigger>
           <TabsTrigger value="topics"><BookOpen className="h-4 w-4 mr-1" /> Tópicos ({topics.length})</TabsTrigger>
           <TabsTrigger value="lessons"><FileText className="h-4 w-4 mr-1" /> Aulas ({lessons.length})</TabsTrigger>
           <TabsTrigger value="exercises"><Target className="h-4 w-4 mr-1" /> Exercícios ({exercises.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="tracks" className="mt-6">
+          <div className="flex justify-end mb-4"><Button asChild><Link href="/admin/conteudo/trilhas/nova"><Plus className="h-4 w-4 mr-1" /> Nova Trilha</Link></Button></div>
+          {tracks.length === 0 ? <EmptyState icon={Inbox} title="Nenhuma trilha" description="Execute a migração do Supabase para criar as trilhas iniciais." /> : (
+            <Card><CardContent className="pt-6 overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Identificador</TableHead><TableHead>Ordem</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader><TableBody>
+              {tracks.map((track) => <TableRow key={track.slug}><TableCell className="font-medium">{track.icon} {track.label}</TableCell><TableCell>{track.slug}</TableCell><TableCell>{track.order_index}</TableCell><TableCell><Button variant="ghost" size="icon-sm" onClick={() => toast.info('A edição de trilhas será liberada no próximo passo.')}><Pencil className="h-4 w-4" /></Button></TableCell></TableRow>)}
+            </TableBody></Table></CardContent></Card>
+          )}
+        </TabsContent>
 
         <TabsContent value="topics" className="mt-6">
           <div className="flex justify-end mb-4">
@@ -87,7 +100,7 @@ export function ContentManagement() {
                       <TableCell className="font-medium">{t.title}</TableCell>
                       <TableCell><Badge variant="secondary">{TRACKS[t.track as keyof typeof TRACKS]?.label ?? t.track}</Badge></TableCell>
                       <TableCell>{t.order_index}</TableCell>
-                      <TableCell><Button variant="ghost" size="icon-sm" onClick={() => deleteTopic(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
+                      <TableCell><div className="flex gap-1"><Button asChild variant="ghost" size="icon-sm"><Link href={`/admin/conteudo/topicos/${t.id}/editar`}><Pencil className="h-4 w-4" /></Link></Button><Button variant="ghost" size="icon-sm" onClick={() => deleteTopic(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -112,7 +125,7 @@ export function ContentManagement() {
                       <TableCell className="font-medium">{l.title}</TableCell>
                       <TableCell>{l.xp_reward}</TableCell>
                       <TableCell>{l.order_index}</TableCell>
-                      <TableCell><Button variant="ghost" size="icon-sm" onClick={() => deleteLesson(l.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
+                      <TableCell><div className="flex gap-1"><Button asChild variant="ghost" size="icon-sm"><Link href={`/admin/conteudo/aulas/${l.id}/editar`}><Pencil className="h-4 w-4" /></Link></Button><Button variant="ghost" size="icon-sm" onClick={() => deleteLesson(l.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -138,7 +151,7 @@ export function ContentManagement() {
                       <TableCell><Badge variant="secondary">{ex.type === 'mc' ? 'Múltipla Escolha' : ex.type === 'tf' ? 'V/F' : 'Aberta'}</Badge></TableCell>
                       <TableCell>{ex.difficulty}</TableCell>
                       <TableCell>{ex.xp_reward}</TableCell>
-                      <TableCell><Button variant="ghost" size="icon-sm" onClick={() => deleteExercise(ex.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
+                      <TableCell><div className="flex gap-1"><Button asChild variant="ghost" size="icon-sm"><Link href={`/admin/conteudo/exercicios/${ex.id}/editar`}><Pencil className="h-4 w-4" /></Link></Button><Button variant="ghost" size="icon-sm" onClick={() => deleteExercise(ex.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
