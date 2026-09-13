@@ -1,13 +1,46 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { FadeIn } from '@/components/ui/animate'
-import { TRACKS, type TrackKey } from '@/lib/types'
+import { TRACKS, type Track, type TrackKey } from '@/lib/types'
+import { useSupabase } from '@/lib/supabase/hooks'
 import { ArrowRight } from 'lucide-react'
 
 export function LandingTracks() {
+  const supabase = useSupabase()
+  const [tracks, setTracks] = useState<Track[]>([])
+
+  useEffect(() => {
+    if (!supabase) return
+
+    const loadTracks = async () => {
+      const { data } = await supabase
+        .from('tracks')
+        .select('*')
+        .order('order_index')
+
+      if (data?.length) setTracks(data as Track[])
+    }
+
+    void loadTracks()
+  }, [supabase])
+
+  const displayedTracks: Track[] = tracks.length > 0
+    ? tracks
+    : (Object.entries(TRACKS) as [TrackKey, typeof TRACKS[TrackKey]][]).map(([slug, track]) => ({
+        slug,
+        label: track.label,
+        description: track.description,
+        icon: track.icon,
+        color: track.color,
+        order_index: 0,
+        created_at: '',
+        updated_at: '',
+      }))
+
   return (
     <section className="py-20">
       <div className="mx-auto max-w-[1200px] px-4">
@@ -18,8 +51,8 @@ export function LandingTracks() {
           Escolha seu nível e comece a estudar agora mesmo.
         </p>
         <div className="grid sm:grid-cols-2 gap-6">
-          {(Object.entries(TRACKS) as [TrackKey, typeof TRACKS[TrackKey]][]).map(([key, track], i) => (
-            <FadeIn key={key} delay={i * 0.1}>
+          {displayedTracks.map((track, i) => (
+            <FadeIn key={track.slug} delay={i * 0.1}>
               <Card variant="interactive" className="overflow-hidden">
                 <div className={`h-2 bg-gradient-to-r ${track.color}`} />
                 <CardContent className="pt-6">
@@ -31,7 +64,7 @@ export function LandingTracks() {
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" asChild className="mt-2">
-                    <Link href={`/trilhas/${key}`}>
+                    <Link href={`/trilhas/${track.slug}`}>
                       Ver trilha <ArrowRight className="h-4 w-4 ml-1" />
                     </Link>
                   </Button>
