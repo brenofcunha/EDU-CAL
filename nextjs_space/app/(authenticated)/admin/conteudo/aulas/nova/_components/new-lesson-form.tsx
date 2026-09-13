@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MarkdownRenderer } from '@/components/markdown-renderer'
+import { MarkdownEditor, ResourceManager, normalizeMarkdown, type ContentResource } from '@/components/content-editor'
 import { useUser } from '@/lib/supabase/hooks'
 import type { Topic } from '@/lib/types'
 import { toast } from 'sonner'
@@ -24,6 +23,7 @@ export function NewLessonForm() {
   const [content, setContent] = useState('')
   const [orderIndex, setOrderIndex] = useState('0')
   const [xpReward, setXpReward] = useState('10')
+  const [resources, setResources] = useState<ContentResource[]>([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -38,8 +38,9 @@ export function NewLessonForm() {
     if (!supabase || !topicId || !title.trim()) { toast.error('Preencha os campos obrigatórios.'); return }
     setSaving(true)
     const { error } = await supabase.from('lessons').insert({
-      topic_id: topicId, title: title.trim(), content_md: content || null,
+      topic_id: topicId, title: title.trim(), content_md: normalizeMarkdown(content) || null,
       order_index: parseInt(orderIndex) || 0, xp_reward: parseInt(xpReward) || 10,
+      resources,
     })
     setSaving(false)
     if (error) { toast.error('Erro ao criar aula.'); return }
@@ -63,18 +64,8 @@ export function NewLessonForm() {
           <div className="space-y-2"><Label>Índice de Ordem</Label><Input type="number" value={orderIndex} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderIndex(e.target.value)} /></div>
           <div className="space-y-2"><Label>XP de Recompensa</Label><Input type="number" value={xpReward} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setXpReward(e.target.value)} /></div>
         </div>
-        <div className="space-y-2">
-          <Label>Conteúdo (Markdown + KaTeX)</Label>
-          <Tabs defaultValue="editor">
-            <TabsList><TabsTrigger value="editor"><Edit3 className="h-4 w-4 mr-1" /> Editor</TabsTrigger><TabsTrigger value="preview"><Eye className="h-4 w-4 mr-1" /> Pré-visualizar</TabsTrigger></TabsList>
-            <TabsContent value="editor" className="mt-3">
-              <Textarea value={content} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)} className="min-h-[300px] font-mono text-sm" placeholder="Escreva em Markdown... Use $$ para fórmulas KaTeX." />
-            </TabsContent>
-            <TabsContent value="preview" className="mt-3">
-              <div className="min-h-[300px] p-4 border rounded-lg">{content ? <MarkdownRenderer content={content} /> : <p className="text-muted-foreground italic">Nada para pré-visualizar...</p>}</div>
-            </TabsContent>
-          </Tabs>
-        </div>
+        <MarkdownEditor label="Conteúdo da aula (Markdown + KaTeX)" value={content} onChange={setContent} placeholder="Digite a aula e use a barra de formatação..." />
+        {supabase && <ResourceManager supabase={supabase} resources={resources} onChange={setResources} />}
         <Button onClick={handleSubmit} loading={saving}><Save className="h-4 w-4 mr-1" /> Criar Aula</Button>
       </CardContent>
     </Card>

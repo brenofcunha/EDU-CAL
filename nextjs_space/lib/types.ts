@@ -17,6 +17,7 @@ export interface Topic {
   description: string | null
   track: 'calculo1' | 'calculo2' | 'calculo3' | 'calculovetorial'
   order_index: number
+  resources: ContentResource[]
   created_at: string
 }
 
@@ -27,6 +28,7 @@ export interface Lesson {
   content_md: string | null
   order_index: number
   xp_reward: number
+  resources: ContentResource[]
   created_at: string
 }
 
@@ -41,7 +43,15 @@ export interface Exercise {
   explanation: string | null
   difficulty: 'easy' | 'medium' | 'hard'
   xp_reward: number
+  resources: ContentResource[]
   created_at: string
+}
+
+export interface ContentResource {
+  type: 'file' | 'link'
+  title: string
+  url: string
+  path?: string
 }
 
 export interface UserLessonProgress {

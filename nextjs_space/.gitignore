@@ -1,13 +1,30 @@
+# Dependencies
 node_modules/
+
+# Next.js and build output
 .next/
 .build/
 .deploy/
 out/
 dist/
 coverage/
+
+# Local environment files and secrets
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
+.env.test
 !.env.example
+*.pem
+*.key
+*.crt
+*credentials*.json
+*secret*.json
+
+# Generated local metadata
 *.tsbuildinfo
 *.log
+AGENTS.md
+CLAUDE.md

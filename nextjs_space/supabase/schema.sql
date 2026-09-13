@@ -25,6 +25,7 @@ CREATE TABLE topics (
   description TEXT,
   track TEXT NOT NULL CHECK (track IN ('calculo1','calculo2','calculo3','calculovetorial')),
   order_index INT NOT NULL,
+  resources JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -36,6 +37,7 @@ CREATE TABLE lessons (
   content_md TEXT,
   order_index INT NOT NULL,
   xp_reward INT NOT NULL DEFAULT 10,
+  resources JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -51,6 +53,7 @@ CREATE TABLE exercises (
   explanation TEXT,
   difficulty TEXT NOT NULL DEFAULT 'easy' CHECK (difficulty IN ('easy','medium','hard')),
   xp_reward INT NOT NULL DEFAULT 5,
+  resources JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
+import { ResourceList } from '@/components/content-editor'
 import { ExerciseCard } from '@/components/exercise-card'
 import { EmptyState } from '@/components/empty-state'
 import { useUser } from '@/lib/supabase/hooks'
@@ -147,6 +148,7 @@ export function LessonView({ track, topicId, lessonId }: Props) {
                 )}
               </div>
               {lesson.content_md && <MarkdownRenderer content={lesson.content_md} />}
+              <ResourceList resources={lesson.resources} />
               {user && !completed && (
                 <Button onClick={markComplete} className="mt-6">
                   <CheckCircle className="h-4 w-4 mr-1" /> Marcar como Concluída

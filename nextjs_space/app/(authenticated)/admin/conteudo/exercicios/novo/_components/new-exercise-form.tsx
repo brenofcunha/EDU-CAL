@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useUser } from '@/lib/supabase/hooks'
 import type { Topic } from '@/lib/types'
 import { toast } from 'sonner'
 import { Save, Plus, X } from 'lucide-react'
+import { MarkdownEditor, ResourceManager, normalizeMarkdown, type ContentResource } from '@/components/content-editor'
 
 export function NewExerciseForm() {
   const { supabase } = useUser()
@@ -25,6 +25,7 @@ export function NewExerciseForm() {
   const [explanation, setExplanation] = useState('')
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy')
   const [xpReward, setXpReward] = useState('5')
+  const [resources, setResources] = useState<ContentResource[]>([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -41,9 +42,10 @@ export function NewExerciseForm() {
     }
     setSaving(true)
     const payload: any = {
-      topic_id: topicId, question: question.trim(), type,
-      correct_answer: correctAnswer.trim(), explanation: explanation.trim() || null,
+      topic_id: topicId, question: normalizeMarkdown(question), type,
+      correct_answer: correctAnswer.trim(), explanation: normalizeMarkdown(explanation) || null,
       difficulty, xp_reward: parseInt(xpReward) || 5,
+      resources,
     }
     if (type === 'mc') payload.options = options.filter((o) => o.trim())
     const { error } = await supabase.from('exercises').insert(payload)
@@ -64,7 +66,7 @@ export function NewExerciseForm() {
             <SelectContent>{topics.map((t) => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}</SelectContent>
           </Select>
         </div>
-        <div className="space-y-2"><Label>Pergunta (Markdown)</Label><Textarea value={question} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setQuestion(e.target.value)} className="font-mono text-sm" /></div>
+        <MarkdownEditor label="Pergunta" value={question} onChange={setQuestion} placeholder="Digite o enunciado do exercício..." minHeight="min-h-[180px]" />
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Tipo</Label>
@@ -107,7 +109,8 @@ export function NewExerciseForm() {
           <Label>Resposta Correta {type === 'tf' && '(verdadeiro ou falso)'}</Label>
           <Input value={correctAnswer} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCorrectAnswer(e.target.value)} />
         </div>
-        <div className="space-y-2"><Label>Explicação (opcional, Markdown)</Label><Textarea value={explanation} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setExplanation(e.target.value)} className="font-mono text-sm" /></div>
+        <MarkdownEditor label="Explicação (opcional)" value={explanation} onChange={setExplanation} placeholder="Explique a resposta para o estudante..." minHeight="min-h-[160px]" />
+        {supabase && <ResourceManager supabase={supabase} resources={resources} onChange={setResources} />}
         <div className="space-y-2"><Label>XP de Recompensa</Label><Input type="number" value={xpReward} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setXpReward(e.target.value)} className="w-32" /></div>
         <Button onClick={handleSubmit} loading={saving}><Save className="h-4 w-4 mr-1" /> Criar Exercício</Button>
       </CardContent>
