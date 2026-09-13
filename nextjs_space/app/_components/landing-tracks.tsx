@@ -1,33 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { FadeIn } from '@/components/ui/animate'
 import { TRACKS, type Track, type TrackKey } from '@/lib/types'
-import { useSupabase } from '@/lib/supabase/hooks'
 import { ArrowRight } from 'lucide-react'
 
-export function LandingTracks() {
-  const supabase = useSupabase()
-  const [tracks, setTracks] = useState<Track[]>([])
+function trackGradient(color: string) {
+  const gradients: Record<string, string> = {
+    'from-blue-500 to-indigo-600': 'linear-gradient(90deg, #3b82f6, #4f46e5)',
+    'from-purple-500 to-pink-600': 'linear-gradient(90deg, #a855f7, #db2777)',
+    'from-emerald-500 to-teal-600': 'linear-gradient(90deg, #10b981, #0d9488)',
+    'from-amber-500 to-orange-600': 'linear-gradient(90deg, #f59e0b, #ea580c)',
+  }
+  return gradients[color] ?? gradients['from-blue-500 to-indigo-600']
+}
 
-  useEffect(() => {
-    if (!supabase) return
-
-    const loadTracks = async () => {
-      const { data } = await supabase
-        .from('tracks')
-        .select('*')
-        .order('order_index')
-
-      if (data?.length) setTracks(data as Track[])
-    }
-
-    void loadTracks()
-  }, [supabase])
-
+export function LandingTracks({ tracks }: { tracks: Track[] }) {
   const displayedTracks: Track[] = tracks.length > 0
     ? tracks
     : (Object.entries(TRACKS) as [TrackKey, typeof TRACKS[TrackKey]][]).map(([slug, track]) => ({
@@ -54,7 +44,7 @@ export function LandingTracks() {
           {displayedTracks.map((track, i) => (
             <FadeIn key={track.slug} delay={i * 0.1}>
               <Card variant="interactive" className="overflow-hidden">
-                <div className={`h-2 bg-gradient-to-r ${track.color}`} />
+                <div className="h-2" style={{ backgroundImage: trackGradient(track.color) }} />
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-3xl">{track.icon}</span>

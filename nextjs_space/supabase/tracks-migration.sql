@@ -22,7 +22,7 @@ ON CONFLICT (slug) DO NOTHING;
 ALTER TABLE public.topics DROP CONSTRAINT IF EXISTS topics_track_check;
 ALTER TABLE public.topics DROP CONSTRAINT IF EXISTS topics_track_fkey;
 ALTER TABLE public.topics
-  ADD CONSTRAINT topics_track_fkey FOREIGN KEY (track) REFERENCES public.tracks(slug) ON UPDATE CASCADE;
+  ADD CONSTRAINT topics_track_fkey FOREIGN KEY (track) REFERENCES public.tracks(slug) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE public.tracks ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Tracks are publicly readable" ON public.tracks;

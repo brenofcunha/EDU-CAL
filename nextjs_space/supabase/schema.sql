@@ -34,7 +34,7 @@ CREATE TABLE topics (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title TEXT NOT NULL,
   description TEXT,
-  track TEXT NOT NULL REFERENCES tracks(slug) ON UPDATE CASCADE,
+  track TEXT NOT NULL REFERENCES tracks(slug) ON UPDATE CASCADE ON DELETE CASCADE,
   order_index INT NOT NULL,
   resources JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()
