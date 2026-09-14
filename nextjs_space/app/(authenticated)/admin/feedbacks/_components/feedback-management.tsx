@@ -32,14 +32,35 @@ export function FeedbackManagement() {
   const [filter, setFilter] = useState<'all' | UserFeedback['status']>('all')
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const loadFeedbacks = useCallback(async () => {
     if (!supabase) { setLoading(false); return }
-    let query = supabase.from('user_feedback').select('*, profiles!user_feedback_user_id_fkey(name)').order('created_at', { ascending: false })
+    setLoadError(null)
+    let query = supabase.from('user_feedback').select('*').order('created_at', { ascending: false })
     if (filter !== 'all') query = query.eq('status', filter)
     const { data, error } = await query
-    if (error) toast.error('Não foi possível carregar os feedbacks.')
-    setFeedbacks((data ?? []) as UserFeedback[])
+    if (error) {
+      setFeedbacks([])
+      setLoadError(error.message)
+      toast.error(`Não foi possível carregar os feedbacks: ${error.message}`)
+      setLoading(false)
+      return
+    }
+
+    const rows = (data ?? []) as UserFeedback[]
+    const userIds = [...new Set(rows.map((feedback) => feedback.user_id))]
+    if (userIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id, name').in('id', userIds)
+      if (profilesError) {
+        setLoadError(profilesError.message)
+        toast.error(`Feedbacks carregados, mas não foi possível buscar os nomes: ${profilesError.message}`)
+      }
+      const namesById = new Map((profiles ?? []).map((profile) => [profile.id, profile.name]))
+      setFeedbacks(rows.map((feedback) => ({ ...feedback, profiles: { name: namesById.get(feedback.user_id) ?? 'Usuário' } })))
+    } else {
+      setFeedbacks(rows)
+    }
     setLoading(false)
   }, [filter, supabase])
 
@@ -67,7 +88,7 @@ export function FeedbackManagement() {
           </Button>
         ))}
       </div>
-      {feedbacks.length === 0 ? <EmptyState icon={Inbox} title="Nenhum feedback encontrado" description="Novos relatos enviados pelos usuários aparecerão aqui." /> : (
+      {loadError ? <Card><CardContent className="pt-6"><p className="font-medium text-destructive">Não foi possível carregar os feedbacks.</p><p className="text-sm text-muted-foreground mt-1 break-words">{loadError}</p></CardContent></Card> : feedbacks.length === 0 ? <EmptyState icon={Inbox} title="Nenhum feedback encontrado" description="Novos relatos enviados pelos usuários aparecerão aqui." /> : (
         <div className="space-y-4">
           {feedbacks.map((feedback) => <FeedbackCard key={feedback.id} feedback={feedback} saving={savingId === feedback.id} onUpdate={updateFeedback} />)}
         </div>
