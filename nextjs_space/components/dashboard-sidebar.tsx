@@ -9,6 +9,7 @@ import {
   BookOpen,
   FolderOpen,
   MessageSquare,
+  Bug,
   User,
   Shield,
   LogOut,
@@ -21,6 +22,7 @@ const navItems = [
   { href: '/trilhas', label: 'Trilhas', icon: BookOpen },
   { href: '/pasta', label: 'Pasta de Estudo', icon: FolderOpen },
   { href: '/forum', label: 'Fórum', icon: MessageSquare },
+  { href: '/feedback', label: 'Relatar problema', icon: Bug },
   { href: '/perfil', label: 'Perfil', icon: User },
 ]
 

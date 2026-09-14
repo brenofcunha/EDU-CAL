@@ -18,7 +18,7 @@ CREATE TABLE tracks (
 -- Tabela pública de profiles (extensão do Supabase Auth users)
 CREATE TABLE profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
+  name TEXT NOT NULL UNIQUE,
   bio TEXT,
   avatar_url TEXT,
   role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin')),
@@ -28,6 +28,21 @@ CREATE TABLE profiles (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Feedbacks e relatos de bugs enviados pelos usuários
+CREATE TABLE user_feedback (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  category TEXT NOT NULL CHECK (category IN ('bug', 'suggestion', 'other')),
+  description TEXT NOT NULL CHECK (char_length(description) BETWEEN 10 AND 5000),
+  page_url TEXT,
+  status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'in_progress', 'resolved', 'dismissed')),
+  admin_notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX user_feedback_created_at_idx ON user_feedback (created_at DESC);
 
 -- Tópicos de Cálculo
 CREATE TABLE topics (
@@ -193,6 +208,7 @@ CREATE TRIGGER on_auth_user_created
 -- ============================================================
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE study_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE study_favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_lesson_progress ENABLE ROW LEVEL SECURITY;
@@ -210,6 +226,16 @@ ALTER TABLE forum_post_tags ENABLE ROW LEVEL SECURITY;
 -- Profiles
 CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (TRUE);
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+-- Feedback: usuários enviam e consultam os próprios relatos; admins gerenciam todos.
+CREATE POLICY "Users can insert own feedback" ON user_feedback FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can view own feedback" ON user_feedback FOR SELECT
+  USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all feedback" ON user_feedback FOR SELECT
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can update feedback" ON user_feedback FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
 
 -- Study Notes (isolamento estrito)
 CREATE POLICY "Users can view own notes" ON study_notes FOR SELECT USING (auth.uid() = user_id);

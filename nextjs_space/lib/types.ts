@@ -152,6 +152,19 @@ export interface AdminAuditLog {
   profiles?: Profile
 }
 
+export interface UserFeedback {
+  id: string
+  user_id: string
+  category: 'bug' | 'suggestion' | 'other'
+  description: string
+  page_url: string | null
+  status: 'new' | 'in_progress' | 'resolved' | 'dismissed'
+  admin_notes: string | null
+  created_at: string
+  updated_at: string
+  profiles?: Pick<Profile, 'name'>
+}
+
 export const TRACKS = {
   calculo1: { label: 'Cálculo I', description: 'Limites, derivadas e integrais', icon: '∫', color: 'from-blue-500 to-indigo-600' },
   calculo2: { label: 'Cálculo II', description: 'Séries, sequências e integrais múltiplas', icon: '∑', color: 'from-purple-500 to-pink-600' },
