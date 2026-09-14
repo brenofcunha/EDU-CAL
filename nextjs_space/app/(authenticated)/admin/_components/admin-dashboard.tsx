@@ -5,27 +5,28 @@ import { Card, CardContent } from '@/components/ui/card'
 import { PageHeader } from '@/components/layouts/page-header'
 import { useUser } from '@/lib/supabase/hooks'
 import { Stagger, StaggerItem } from '@/components/ui/animate'
-import { Users, BookOpen, MessageSquare, Target, FileText, Shield } from 'lucide-react'
+import { Users, BookOpen, MessageSquare, Target, FileText, Shield, Bug } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
 export function AdminDashboard() {
   const { supabase } = useUser()
-  const [stats, setStats] = useState({ users: 0, topics: 0, lessons: 0, exercises: 0, posts: 0 })
+  const [stats, setStats] = useState({ users: 0, topics: 0, lessons: 0, exercises: 0, posts: 0, feedback: 0 })
 
   useEffect(() => {
     if (!supabase) return
     const fetch = async () => {
-      const [u, t, l, e, p] = await Promise.all([
+      const [u, t, l, e, p, f] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('topics').select('id', { count: 'exact', head: true }),
         supabase.from('lessons').select('id', { count: 'exact', head: true }),
         supabase.from('exercises').select('id', { count: 'exact', head: true }),
         supabase.from('forum_posts').select('id', { count: 'exact', head: true }),
+        supabase.from('user_feedback').select('id', { count: 'exact', head: true }).eq('status', 'new'),
       ])
       setStats({
         users: u.count ?? 0, topics: t.count ?? 0, lessons: l.count ?? 0,
-        exercises: e.count ?? 0, posts: p.count ?? 0,
+        exercises: e.count ?? 0, posts: p.count ?? 0, feedback: f.count ?? 0,
       })
     }
     fetch()
@@ -37,6 +38,7 @@ export function AdminDashboard() {
     { label: 'Aulas', value: stats.lessons, icon: FileText, href: '/admin/conteudo', color: 'text-purple-500 bg-purple-500/10' },
     { label: 'Exercícios', value: stats.exercises, icon: Target, href: '/admin/conteudo', color: 'text-amber-500 bg-amber-500/10' },
     { label: 'Posts do Fórum', value: stats.posts, icon: MessageSquare, href: '/admin/forum', color: 'text-pink-500 bg-pink-500/10' },
+    { label: 'Feedbacks novos', value: stats.feedback, icon: Bug, href: '/admin/feedbacks', color: 'text-rose-500 bg-rose-500/10' },
   ]
 
   const quickLinks = [
@@ -45,6 +47,7 @@ export function AdminDashboard() {
     { label: 'Moderar Fórum', href: '/admin/forum', icon: MessageSquare },
     { label: 'Gerenciar Tags', href: '/admin/tags', icon: Shield },
     { label: 'Logs de Auditoria', href: '/admin/logs', icon: FileText },
+    { label: 'Feedbacks dos Usuários', href: '/admin/feedbacks', icon: Bug },
   ]
 
   return (
