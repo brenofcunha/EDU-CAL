@@ -46,7 +46,7 @@ export function LessonView({ track, topicId, lessonId }: Props) {
       const { data: lessonData } = await supabase.from('lessons').select('*').eq('id', lessonId).single()
       setLesson(lessonData as Lesson | null)
 
-      const { data: exData } = await supabase.from('exercises').select('*').eq('topic_id', topicId).order('created_at')
+      const { data: exData } = await supabase.from('exercises').select('*').eq('lesson_id', lessonId).order('created_at', { ascending: true })
       setExercises((exData ?? []) as Exercise[])
 
       const { data: siblingsData } = await supabase.from('lessons').select('*').eq('topic_id', topicId).order('order_index')
