@@ -3,13 +3,15 @@ export interface Profile {
   name: string
   bio: string | null
   avatar_url: string | null
-  role: 'student' | 'admin'
+  role: UserRole
   xp_points: number
   streak_days: number
   last_study_date: string | null
   created_at: string
   updated_at: string
 }
+
+export type UserRole = 'student' | 'professor' | 'admin'
 
 export interface Track {
   slug: string
