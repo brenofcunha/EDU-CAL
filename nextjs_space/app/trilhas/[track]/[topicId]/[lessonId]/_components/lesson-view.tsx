@@ -18,7 +18,6 @@ import {
   CheckCircle,
   ArrowLeft,
   ArrowRight,
-  BookOpen,
   Star,
   StarOff,
   FileText,
@@ -90,9 +89,64 @@ export function LessonView({ track, topicId, lessonId }: Props) {
 
   const handleAnswer = async (exerciseId: string, answer: string, isCorrect: boolean) => {
     if (!supabase || !user) return
-    await supabase.from('user_exercise_attempts').insert({
+    const { data: previousCorrect } = isCorrect
+      ? await supabase
+        .from('user_exercise_attempts')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('exercise_id', exerciseId)
+        .eq('is_correct', true)
+        .limit(1)
+      : { data: [] }
+
+    const { error: attemptError } = await supabase.from('user_exercise_attempts').insert({
       user_id: user.id, exercise_id: exerciseId, answer, is_correct: isCorrect,
     })
+    if (attemptError) {
+      toast.error('Não foi possível registrar sua resposta.')
+      return
+    }
+
+    if (!isCorrect || previousCorrect?.length) return
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('xp_points, streak_days, last_study_date')
+      .eq('id', user.id)
+      .single()
+    const exercise = exercises.find((item) => item.id === exerciseId)
+    if (profileError || !profile || !exercise) {
+      toast.error('Resposta registrada, mas não foi possível atualizar seu XP.')
+      return
+    }
+
+    const today = new Date()
+    const todayKey = [today.getFullYear(), today.getMonth() + 1, today.getDate()]
+      .map((part) => String(part).padStart(2, '0'))
+      .join('-')
+    const yesterday = new Date(today)
+    yesterday.setDate(today.getDate() - 1)
+    const yesterdayKey = [yesterday.getFullYear(), yesterday.getMonth() + 1, yesterday.getDate()]
+      .map((part) => String(part).padStart(2, '0'))
+      .join('-')
+    const streakDays = profile.last_study_date === todayKey
+      ? profile.streak_days
+      : profile.last_study_date === yesterdayKey
+        ? profile.streak_days + 1
+        : 1
+
+    const { error: updateError } = await supabase.from('profiles').update({
+      xp_points: profile.xp_points + exercise.xp_reward,
+      streak_days: streakDays,
+      last_study_date: todayKey,
+      updated_at: new Date().toISOString(),
+    }).eq('id', user.id)
+    if (updateError) {
+      toast.error('Resposta correta, mas não foi possível atualizar seu XP.')
+      return
+    }
+
+    toast.success(`Resposta correta! +${exercise.xp_reward} XP`)
   }
 
   const currentIdx = siblings.findIndex((s) => s?.id === lessonId)
