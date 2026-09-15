@@ -14,6 +14,13 @@ function normalizeAnswer(answer: string) {
   return answer.trim().toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
+function normalizeTrueFalseAnswer(answer: string) {
+  const normalized = normalizeAnswer(answer)
+  if (['true', 'verdadeiro', 'v', 'sim', '1'].includes(normalized)) return 'true'
+  if (['false', 'falso', 'f', 'nao', 'não', 'n', '0'].includes(normalized)) return 'false'
+  return normalized
+}
+
 interface ExerciseCardProps {
   exercise: Exercise
   onAnswer?: (exerciseId: string, answer: string, isCorrect: boolean) => void | Promise<void>
@@ -37,7 +44,9 @@ export function ExerciseCard({ exercise, onAnswer }: ExerciseCardProps) {
     const normalizedCorrect = normalizeAnswer(exercise?.correct_answer ?? '')
     const correctOptionIndex = (options ?? []).findIndex((option) => normalizeAnswer(option) === normalizedSelected)
     const correctOptionLetter = correctOptionIndex >= 0 ? String.fromCharCode(97 + correctOptionIndex) : ''
-    const correct = normalizedSelected === normalizedCorrect || correctOptionLetter === normalizedCorrect
+    const correct = exercise?.type === 'tf'
+      ? normalizeTrueFalseAnswer(selected) === normalizeTrueFalseAnswer(exercise?.correct_answer ?? '')
+      : normalizedSelected === normalizedCorrect || correctOptionLetter === normalizedCorrect
     setIsCorrect(correct)
     setSubmitted(true)
     onAnswer?.(exercise?.id ?? '', selected, correct)
