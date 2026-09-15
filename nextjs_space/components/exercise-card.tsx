@@ -10,9 +10,13 @@ import { ResourceList } from '@/components/content-editor'
 import { CheckCircle, XCircle, HelpCircle } from 'lucide-react'
 import type { Exercise } from '@/lib/types'
 
+function normalizeAnswer(answer: string) {
+  return answer.trim().toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
 interface ExerciseCardProps {
   exercise: Exercise
-  onAnswer?: (exerciseId: string, answer: string, isCorrect: boolean) => void
+  onAnswer?: (exerciseId: string, answer: string, isCorrect: boolean) => void | Promise<void>
 }
 
 export function ExerciseCard({ exercise, onAnswer }: ExerciseCardProps) {
@@ -29,7 +33,11 @@ export function ExerciseCard({ exercise, onAnswer }: ExerciseCardProps) {
 
   const handleSubmit = () => {
     if (!selected?.trim()) return
-    const correct = selected.trim().toLowerCase() === exercise?.correct_answer?.trim()?.toLowerCase()
+    const normalizedSelected = normalizeAnswer(selected)
+    const normalizedCorrect = normalizeAnswer(exercise?.correct_answer ?? '')
+    const correctOptionIndex = (options ?? []).findIndex((option) => normalizeAnswer(option) === normalizedSelected)
+    const correctOptionLetter = correctOptionIndex >= 0 ? String.fromCharCode(97 + correctOptionIndex) : ''
+    const correct = normalizedSelected === normalizedCorrect || correctOptionLetter === normalizedCorrect
     setIsCorrect(correct)
     setSubmitted(true)
     onAnswer?.(exercise?.id ?? '', selected, correct)
@@ -68,7 +76,7 @@ export function ExerciseCard({ exercise, onAnswer }: ExerciseCardProps) {
                 disabled={submitted}
                 onClick={() => setSelected(opt)}
                 className={`w-full text-left px-4 py-3 rounded-lg border transition-all text-sm ${
-                  submitted && opt?.toLowerCase() === exercise?.correct_answer?.toLowerCase()
+                  submitted && (normalizeAnswer(opt) === normalizeAnswer(exercise?.correct_answer ?? '') || String.fromCharCode(97 + i) === normalizeAnswer(exercise?.correct_answer ?? ''))
                     ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
                     : submitted && selected === opt && !isCorrect
                       ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
