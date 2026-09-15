@@ -21,7 +21,7 @@ CREATE TABLE profiles (
   name TEXT NOT NULL UNIQUE,
   bio TEXT,
   avatar_url TEXT,
-  role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin')),
+  role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'professor', 'admin')),
   xp_points INT NOT NULL DEFAULT 0,
   streak_days INT NOT NULL DEFAULT 0,
   last_study_date DATE,

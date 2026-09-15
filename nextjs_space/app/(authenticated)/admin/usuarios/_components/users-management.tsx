@@ -2,16 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { PageHeader } from '@/components/layouts/page-header'
 import { useUser } from '@/lib/supabase/hooks'
 import { SafeDate } from '@/components/safe-format'
-import type { Profile } from '@/lib/types'
+import type { Profile, UserRole } from '@/lib/types'
 import { toast } from 'sonner'
-import { Users, Shield, User } from 'lucide-react'
+import { Shield, User, GraduationCap } from 'lucide-react'
 
 export function UsersManagement() {
   const { supabase } = useUser()
@@ -27,11 +26,11 @@ export function UsersManagement() {
 
   useEffect(() => { fetchUsers() }, [supabase])
 
-  const updateRole = async (userId: string, role: string) => {
+  const updateRole = async (userId: string, role: UserRole) => {
     if (!supabase) return
     const { error } = await supabase.from('profiles').update({ role }).eq('id', userId)
-    if (error) { toast.error('Erro ao atualizar role.'); return }
-    toast.success('Role atualizado!')
+    if (error) { toast.error('Erro ao atualizar nível do usuário.'); return }
+    toast.success('Nível do usuário atualizado!')
     fetchUsers()
   }
 
@@ -58,19 +57,20 @@ export function UsersManagement() {
                 <TableRow key={p.id}>
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell>
-                    <Badge variant={p.role === 'admin' ? 'default' : 'secondary'}>
-                      {p.role === 'admin' ? <Shield className="h-3 w-3 mr-1" /> : <User className="h-3 w-3 mr-1" />}
-                      {p.role === 'admin' ? 'Admin' : 'Estudante'}
+                    <Badge variant={p.role === 'admin' ? 'default' : p.role === 'professor' ? 'outline' : 'secondary'}>
+                      {p.role === 'admin' ? <Shield className="h-3 w-3 mr-1" /> : p.role === 'professor' ? <GraduationCap className="h-3 w-3 mr-1" /> : <User className="h-3 w-3 mr-1" />}
+                      {p.role === 'admin' ? 'Admin' : p.role === 'professor' ? 'Professor' : 'Estudante'}
                     </Badge>
                   </TableCell>
                   <TableCell>{p.xp_points}</TableCell>
                   <TableCell>{p.streak_days} dias</TableCell>
                   <TableCell><SafeDate date={p.created_at} options={{ dateStyle: 'short' }} /></TableCell>
                   <TableCell>
-                    <Select value={p.role} onValueChange={(v: string) => updateRole(p.id, v)}>
-                      <SelectTrigger className="w-[120px] h-8"><SelectValue /></SelectTrigger>
+                    <Select value={p.role} onValueChange={(v: string) => updateRole(p.id, v as UserRole)}>
+                      <SelectTrigger className="w-[130px] h-8"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="student">Estudante</SelectItem>
+                        <SelectItem value="professor">Professor</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>

@@ -4,6 +4,7 @@ import 'katex/dist/katex.min.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { ChunkLoadErrorHandler } from '@/components/chunk-load-error-handler'
+import { PageBackButton } from '@/components/page-back-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +47,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <PageBackButton />
           {children}
           <Toaster />
           <ChunkLoadErrorHandler />

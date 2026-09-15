@@ -64,7 +64,7 @@ export function PerfilContent() {
               </Avatar>
               <h3 className="font-semibold text-lg">{profile?.name ?? 'Usuário'}</h3>
               <p className="text-sm text-muted-foreground">{user?.email ?? ''}</p>
-              <Badge variant="secondary" className="mt-2">{profile?.role === 'admin' ? 'Administrador' : 'Estudante'}</Badge>
+              <Badge variant="secondary" className="mt-2">{profile?.role === 'admin' ? 'Administrador' : profile?.role === 'professor' ? 'Professor' : 'Estudante'}</Badge>
               <div className="grid grid-cols-3 gap-4 mt-6 w-full">
                 <div className="text-center">
                   <Trophy className="h-5 w-5 text-primary mx-auto mb-1" />
